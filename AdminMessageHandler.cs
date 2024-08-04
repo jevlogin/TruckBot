@@ -1,7 +1,10 @@
-﻿using Telegram.Bot;
+﻿using Newtonsoft.Json.Linq;
+using System;
+using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using TruckBot.Data;
 using TruckBot.Helper;
 using User = TruckBot.Model.User.User;
@@ -120,6 +123,11 @@ internal class AdminMessageHandler : IMessageHandler
                     case MessageType.ProximityAlertTriggered:
                         break;
                     case MessageType.WebAppData:
+                        if (message.WebAppData is not { } webAppData)
+                            return;
+                        await _bot.SendTextMessageAsync(message.Chat.Id, $"Данные получены! ❤ 👌 ✔", replyMarkup: new ReplyKeyboardRemove());
+                        await Pause.Wait(500);
+                        await ParseWebAppData(message, webAppData, cancellationToken);
                         break;
                     case MessageType.VideoChatScheduled:
                         break;
@@ -180,6 +188,49 @@ internal class AdminMessageHandler : IMessageHandler
         }
     }
 
+    private async Task ParseWebAppData(Message message, WebAppData webAppData, CancellationToken token)
+    {
+        var parseArray = JArray.Parse(webAppData.Data);
+
+        Console.WriteLine(parseArray);
+        return;
+
+        JObject callbackType = (JObject)parseArray[0];
+        CallbackType type;
+        try
+        {
+            type = callbackType.ToObject<CallbackType>();
+        }
+        catch (Exception ex)
+        {
+            await Console.Out.WriteLineAsync($"Возникло исключение WebAppData:\n\n{ex}");
+            return;
+        }
+
+        switch (type)
+        {
+            case CallbackType.UserRegister:
+                await _bot.SendTextMessageAsync(message.Chat.Id, "Мы получили ваши данные. Обрабатываем");
+                JObject userResponse = (JObject)parseArray[1];
+
+                User newUser;
+                try
+                {
+                    newUser = userResponse.ToObject<User>();
+                }
+                catch (Exception ex)
+                {
+                    await Console.Out.WriteLineAsync($"Возникло исключение WebAppData:\n\n{ex}");
+                    return;
+                }
+
+                Console.WriteLine(newUser);
+
+
+                break;
+        }
+    }
+
     private async Task HandleCommandMsgAsync(Message message, CancellationToken token)
     {
         if (message.Text is not { } text) return;
@@ -229,7 +280,15 @@ internal class AdminMessageHandler : IMessageHandler
     {
         Console.WriteLine("Надо научиться добавлять пользователей.");
 
+        var webAppinfo = new WebAppInfo();
+        webAppinfo.Url = @"https://jevlogin.github.io/TruckBot/www/addUser.html";
 
+        var button = new KeyboardButton("👽 Зарегать пользователя");
+        button.WebApp = webAppinfo;
+
+        var replyKeyboard = new ReplyKeyboardMarkup(button) { ResizeKeyboard = true };
+
+        await _bot.SendTextMessageAsync(message.Chat.Id, "Чтобы зарегать пользователя, жмякай на кнопку", replyMarkup: replyKeyboard);
     }
 
     private async Task HandleAddAdminCommandAsync(Message message, string[] args, CancellationToken token)

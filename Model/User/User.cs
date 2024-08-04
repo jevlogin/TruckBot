@@ -13,6 +13,7 @@ namespace TruckBot.Model.User
         public string? LastName { get; set; }
         public string? Email { get; set; }
         public string? Phone { get; set; }
+        public string? DriversLicense { get; set; }
         public bool IsHasAuto { get; set; } = false;
     }
 }

@@ -15,7 +15,7 @@ if (tg) {
         let lastName = document.getElementById("lastName").value;
         let phone = document.getElementById("phone").value;
         let driversLicense = document.getElementById("driversLicense").value;
-        let isAdmin = document.getElementById("isAdmin").value;
+        let isAdmin = document.getElementById("isAdmin").checked ? true : false;
 
         let messageDataInfoType = {
             callBackMethod: callBackMethod,
@@ -29,7 +29,6 @@ if (tg) {
             phone: phone,
             driversLicense: driversLicense,
             isAdmin: isAdmin,
-
         };
 
         let jsonArray = [messageDataInfoType, vpoForm];

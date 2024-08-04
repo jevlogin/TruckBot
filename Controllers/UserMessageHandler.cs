@@ -218,6 +218,7 @@ internal class UserMessageHandler : IMessageHandler
 
         foreach (var adminId in _adminList.Keys)
         {
+            if(adminId == 0) continue;
             if (!isRegUser)
             {
                 await _bot.SendTextMessageAsync(adminId, string.Format(DialogData.USER_HAS_NOT_REGISTER, userId), cancellationToken: canToken);
