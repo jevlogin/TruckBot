@@ -1,60 +1,58 @@
-
 <!DOCTYPE html>
-
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="ru">
 <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Форма регистрации пользователя</title>
+    <title>Р¤РѕСЂРјР° СЂРµРіРёСЃС‚СЂР°С†РёРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1 class="text-center mb-3" id="messageContainer">Регистрация пользователя</h1>
+        <h1 class="text-center mb-3" id="messageContainer">Р РµРіРёСЃС‚СЂР°С†РёСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ</h1>
         <form id="truckbotForm">
             <input type="hidden" id="callBackMethod" name="callBackMethod" value="UserRegister">
             <div class="form-group">
-                <label for="userID">Введите userID:</label>
+                <label for="userID">Р’РІРµРґРёС‚Рµ userID:</label>
                 <input type="text" class="form-control" id="userID" name="userID" required>
             </div>
             <div class="form-group">
-                <label for="firstName">Введите имя:</label>
+                <label for="firstName">Р’РІРµРґРёС‚Рµ РёРјСЏ:</label>
                 <input type="text" class="form-control" id="firstName" name="firstName" required>
             </div>
             <div class="form-group">
-                <label for="secondName">Введите фамилию:</label>
+                <label for="secondName">Р’РІРµРґРёС‚Рµ С„Р°РјРёР»РёСЋ:</label>
                 <input type="text" class="form-control" id="secondName" name="secondName" required>
             </div>
             <div class="form-group">
-                <label for="lastName">Введите отчество:</label>
+                <label for="lastName">Р’РІРµРґРёС‚Рµ РѕС‚С‡РµСЃС‚РІРѕ:</label>
                 <input type="text" class="form-control" id="lastName" name="lastName">
             </div>
             <div class="form-group">
-                <label for="phone">Введите телефон:</label>
+                <label for="phone">Р’РІРµРґРёС‚Рµ С‚РµР»РµС„РѕРЅ:</label>
                 <input type="tel" class="form-control" id="phone" name="phone" required>
             </div>
             <div class="form-group">
-                <label for="userType">Выберите тип пользователя:</label>
+                <label for="userType">Р’С‹Р±РµСЂРёС‚Рµ С‚РёРї РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ:</label>
                 <select class="form-control" id="userType" name="userType" required>
-                    <option value="driver">Водитель</option>
-                    <option value="admin">Менеджер</option>
+                    <option value="driver">Р’РѕРґРёС‚РµР»СЊ</option>
+                    <option value="admin">РњРµРЅРµРґР¶РµСЂ</option>
                 </select>
             </div>
             <div id="driverFields" style="display:none;">
                 <div class="form-group">
-                    <label for="driversLicense">Введите серию и номер прав полностью:</label>
+                    <label for="driversLicense">Р’РІРµРґРёС‚Рµ СЃРµСЂРёСЋ Рё РЅРѕРјРµСЂ РїСЂР°РІ РїРѕР»РЅРѕСЃС‚СЊСЋ:</label>
                     <input type="text" class="form-control" id="driversLicense" name="driversLicense">
                 </div>
             </div>
             <div id="adminFields" style="display:none;">
                 <div class="form-group form-check">
-                    <label class="form-check-label" for="isAdmin">Администратор</label>
+                    <label class="form-check-label" for="isAdmin">РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ</label>
                     <input type="checkbox" class="form-check-input" id="isAdmin" name="isAdmin">
                 </div>
             </div>
 
-            <button type="submit" id="submit" class="btn btn-primary">Отправить</button>
+            <button type="submit" id="submit" class="btn btn-primary">РћС‚РїСЂР°РІРёС‚СЊ</button>
         </form>
     </div>
     <script src="js/userRegister.js"></script>
