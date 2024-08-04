@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System.Threading;
-using Telegram.Bot;
+﻿using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -200,8 +198,8 @@ internal class AdminMessageHandler : IMessageHandler
                 await HandleAddAdminCommandAsync(message, args, token);
                 break;
             case "/adduser":
-                //await HandleAddAdminCommandAsync(message, args, cancellationToken);
                 await _bot.SendTextMessageAsync(message.Chat.Id, "Скоро ты научишься добавлять других пользователей.");
+                await HandleAddUserCommandAsync(message, args, token);
                 break;
 
             case "/my_command":
@@ -225,6 +223,13 @@ internal class AdminMessageHandler : IMessageHandler
                 await _bot.SendTextMessageAsync(message.Chat.Id, "Простите, но я не понимаю данной команды.", cancellationToken: token);
                 break;
         }
+    }
+
+    private async Task HandleAddUserCommandAsync(Message message, string[] args, CancellationToken token)
+    {
+        Console.WriteLine("Надо научиться добавлять пользователей.");
+
+
     }
 
     private async Task HandleAddAdminCommandAsync(Message message, string[] args, CancellationToken token)

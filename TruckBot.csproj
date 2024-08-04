@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="www\" />
+    <Folder Include="www\css\" />
   </ItemGroup>
 
   <ItemGroup>
