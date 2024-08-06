@@ -192,18 +192,15 @@ internal class AdminMessageHandler : IMessageHandler
     {
         var parseArray = JArray.Parse(webAppData.Data);
 
-        Console.WriteLine(parseArray);
-        return;
-
         JObject callbackType = (JObject)parseArray[0];
         CallbackType type;
         try
         {
-            type = callbackType.ToObject<CallbackType>();
+            type = callbackType.GetValue("callBackMethod").ToObject<CallbackType>();
         }
         catch (Exception ex)
         {
-            await Console.Out.WriteLineAsync($"Возникло исключение WebAppData:\n\n{ex}");
+            await Console.Out.WriteLineAsync($"Возникло исключение WebAppData при обработке callBackMethod:\n\n{ex}");
             return;
         }
 
@@ -212,7 +209,7 @@ internal class AdminMessageHandler : IMessageHandler
             case CallbackType.UserRegister:
                 await _bot.SendTextMessageAsync(message.Chat.Id, "Мы получили ваши данные. Обрабатываем");
                 JObject userResponse = (JObject)parseArray[1];
-
+                
                 User newUser;
                 try
                 {
@@ -220,12 +217,21 @@ internal class AdminMessageHandler : IMessageHandler
                 }
                 catch (Exception ex)
                 {
-                    await Console.Out.WriteLineAsync($"Возникло исключение WebAppData:\n\n{ex}");
+                    await Console.Out.WriteLineAsync($"Возникло исключение WebAppData при обработке CallbackType.UserRegister:\n\n{ex}");
                     return;
                 }
+                Console.WriteLine(newUser.ToString());
 
-                Console.WriteLine(newUser);
+                await _databaseService.AddUserAsync(newUser);
 
+                if (newUser.IsAdmin)
+                {
+                    _adminList.Add(newUser.UserId, newUser);
+                }
+                else
+                {
+                    _userList.Add(newUser.UserId, newUser);
+                }
 
                 break;
         }
@@ -245,16 +251,14 @@ internal class AdminMessageHandler : IMessageHandler
             case "/start":
                 await _bot.SendTextMessageAsync(message.Chat.Id, "Привет Админ! Ты управляешь этим чатом.");
                 break;
-            case "/addadmin":
-                await HandleAddAdminCommandAsync(message, args, token);
-                break;
+            //case "/addadmin":
+            //    await HandleAddAdminCommandAsync(message, args, token);
+            //    break;
             case "/adduser":
-                await _bot.SendTextMessageAsync(message.Chat.Id, "Скоро ты научишься добавлять других пользователей.");
                 await HandleAddUserCommandAsync(message, args, token);
                 break;
 
             case "/my_command":
-                await _bot.SendTextMessageAsync(message.Chat.Id, "Жми /addadmin чтобы добавить другого админа. (менеджера)", cancellationToken: token);
                 await _bot.SendTextMessageAsync(message.Chat.Id, "Жми /adduser чтобы зарегистрировать нового водителя.", cancellationToken: token);
                 await _bot.SendTextMessageAsync(message.Chat.Id, "Жми /report чтобы сдать отчетность.", cancellationToken: token);
 
@@ -291,6 +295,7 @@ internal class AdminMessageHandler : IMessageHandler
         await _bot.SendTextMessageAsync(message.Chat.Id, "Чтобы зарегать пользователя, жмякай на кнопку", replyMarkup: replyKeyboard);
     }
 
+    #region remove_later
     private async Task HandleAddAdminCommandAsync(Message message, string[] args, CancellationToken token)
     {
         if (message.From?.Id is { } id)
@@ -309,9 +314,15 @@ internal class AdminMessageHandler : IMessageHandler
                         return;
                     }
 
-                    _adminList[userId] = new User { UserId = userId, IsAdmin = true, FirstName = $"Admin_{userId}" };
+                    _adminList[userId] = new User
+                    {
+                        UserId = userId,
+                        IsAdmin = true,
+                        FirstName = $"Admin_{userId}",
 
-                    await _databaseService.AddAdminAsync(_adminList[userId]);
+                    };
+
+                    await _databaseService.AddUserAsync(_adminList[userId]);
                 }
                 else
                 {
@@ -319,7 +330,8 @@ internal class AdminMessageHandler : IMessageHandler
                 }
             }
         }
-    }
+    } 
+    #endregion
 
     private async Task HandleTextMsgAsync(Message message, CancellationToken cancellationToken)
     {
@@ -331,11 +343,11 @@ internal class AdminMessageHandler : IMessageHandler
                     if (replyToMessage.ForwardFrom is { } forwardFrom && forwardFrom.Id != _bot.BotId)
                     {
                         var userId = forwardFrom.Id;
-                        var userName = message.From.FirstName;
+                        var userName = forwardFrom.FirstName;
 
                         if (message.Text is { } text)
                         {
-                            var msgText = $"<b>{message.From.Username}</b>: Уважаемый {userName}, <i>{text}</i>";
+                            var msgText = $"<b>{message.From} {message.From.FirstName}</b>: Уважаемый {userName}, <i>{text}</i>";
 
                             try
                             {

@@ -61,6 +61,7 @@ namespace TruckBot.Data
                 };
 
                 _dbContext.Users.Add(newAdmin);
+                
 
                 Console.WriteLine($"Пользователь с Id {newAdmin.UserId} был добавлен как Администратор.");
 
@@ -68,16 +69,16 @@ namespace TruckBot.Data
             }
         }
 
-        internal async Task AddAdminAsync(User admin)
+        internal async Task AddUserAsync(User user)
         {
-            var adminInServer = await _dbContext.Users.FindAsync(admin.UserId);
-            if (adminInServer == null)
+            var userInServer = await _dbContext.Users.FindAsync(user.UserId);
+            if (userInServer == null)
             {
-                await _dbContext.Users.AddAsync(admin);
+                await _dbContext.Users.AddAsync(user);
             }
             else
             {
-                _dbContext.Entry(adminInServer).CurrentValues.SetValues(admin);
+                _dbContext.Entry(userInServer).CurrentValues.SetValues(user);
             }
 
             await _dbContext.SaveChangesAsync();

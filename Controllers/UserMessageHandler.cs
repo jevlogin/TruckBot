@@ -3,8 +3,10 @@ using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using TruckBot.Data;
 using TruckBot.Helper;
+using TruckBot.Model.User;
 using User = TruckBot.Model.User.User;
 
 
@@ -16,6 +18,7 @@ internal class UserMessageHandler : IMessageHandler
     private DatabaseService _databaseService;
     private readonly Dictionary<long, User> _adminList;
     private Dictionary<long, User> _userList;
+    private Dictionary<string, int> _buttonMsgId = new();
 
     #endregion
 
@@ -182,6 +185,9 @@ internal class UserMessageHandler : IMessageHandler
             case UpdateType.ChosenInlineResult:
                 break;
             case UpdateType.CallbackQuery:
+                if (update.CallbackQuery is not { } callbackQuery)
+                    return;
+                await HandleCallBackQuery(callbackQuery);
                 break;
             case UpdateType.EditedMessage:
                 break;
@@ -206,42 +212,93 @@ internal class UserMessageHandler : IMessageHandler
         }
     }
 
+    private async Task HandleCallBackQuery(CallbackQuery callbackQuery)
+    {
+        if (callbackQuery.Data is not { } data) return;
+        Console.WriteLine($"Наша кнопка {data}");
+
+        switch (data)
+        {
+            case "accept_car":
+                if (_buttonMsgId.TryGetValue(data, out var msgId))
+                {
+                    await _bot.DeleteMessageAsync(callbackQuery.Message?.Chat.Id, msgId);
+                }
+                await _bot.SendTextMessageAsync(callbackQuery.Message?.Chat.Id, "Введите номер авто в формате x999xx");
+                break;
+        }
+    }
+
     private async Task HandleTextMsgAsync(Message message, CancellationToken canToken)
     {
         await Console.Out.WriteLineAsync($"{message.Text}");
 
         var userId = message.From.Id;
         var isRegUser = _userList.ContainsKey(userId);
-
-        await _bot.SendTextMessageAsync(message.Chat.Id, string.Format(DialogData.WELCOME_MESSAGE_TEMPLATE, message.From.Username, userId));
-        await _bot.SendTextMessageAsync(message.Chat.Id, DialogData.YOUR_MESSAGE_HAS_BEEN_RECEIVED, cancellationToken: canToken);
-
-        foreach (var adminId in _adminList.Keys)
+        if (isRegUser)
         {
-            if(adminId == 0) continue;
+            await MsgHasReceived(message, canToken);
+        }
+        else
+        {
+            await SendMsgUnknowUser(message, userId, canToken);
+        }
+
+        List<string> listPhones = new();
+        foreach (var admin in _adminList.Values)
+        {
+            if (admin.UserId == 0) continue;
             if (!isRegUser)
+                await _bot.SendTextMessageAsync(admin.UserId, $"{string.Format(DialogData.USER_HAS_ID, userId)} {DialogData.USER_HAS_NOT_REGISTER} ", cancellationToken: canToken);
+            else
+                await _bot.SendTextMessageAsync(admin.UserId, $"{string.Format(DialogData.USER_HAS_ID, userId)} {DialogData.USER_HAS_REGISTER} ", cancellationToken: canToken);
+            await _bot.ForwardMessageAsync(admin.UserId, message.Chat.Id, message.MessageId, cancellationToken: canToken);
+
+            if (admin.Phone is not { } phone) continue;
+            listPhones.Add(phone);
+        }
+
+        if (isRegUser)
+        {
+            var currentDriver = _userList[userId];
+
+
+            if (currentDriver.IsHasAuto)
             {
-                await _bot.SendTextMessageAsync(adminId, string.Format(DialogData.USER_HAS_NOT_REGISTER, userId), cancellationToken: canToken);
+                await _bot.SendTextMessageAsync(userId, "Тут будет 2 кнопки, Принять АВТО или Сдать Авто", cancellationToken: canToken);
             }
             else
             {
-                User cdUser = _userList[userId];
-                User adminUser = _adminList[adminId];
-                await _bot.SendTextMessageAsync(message.Chat.Id,
-                    string.Format(DialogData.WELCOME_MESSAGE_DEFAULT, cdUser.FirstName, cdUser.SecondName, cdUser.LastName, adminUser.Phone),
-                    cancellationToken: canToken);
-                if (cdUser.IsHasAuto)
+                var acceptButton = new InlineKeyboardButton("Принять авто")
                 {
-                    await _bot.SendTextMessageAsync(adminId, "Тут будет 2 кнопки, Принять АВТО или Сдать Авто", cancellationToken: canToken);
-                }
-                else
-                {
-                    await _bot.SendTextMessageAsync(adminId, "Тут будет 1 кнопка, Принять АВТО", cancellationToken: canToken);
-                }
-            }
-            await _bot.ForwardMessageAsync(adminId, message.Chat.Id, message.MessageId, cancellationToken: canToken);
+                    CallbackData = "accept_car"
+                };
 
+                var keyboardMarkup = new InlineKeyboardMarkup(acceptButton);
+
+                var msg = await _bot.SendTextMessageAsync(userId,
+                    string.Format(DialogData.WELCOME_MESSAGE_DEFAULT, currentDriver.FirstName, currentDriver.SecondName, currentDriver.LastName, listPhones.FirstOrDefault()),
+                    replyMarkup: keyboardMarkup,
+                   cancellationToken: canToken);
+
+                if (_buttonMsgId.ContainsKey("accept_car"))
+                {
+                    _buttonMsgId.Remove("accept_car");
+                }
+                _buttonMsgId.Add("accept_car", msg.MessageId);
+            }
         }
+    }
+
+    private async Task SendMsgUnknowUser(Message message, long userId, CancellationToken canToken)
+    {
+        await _bot.SendTextMessageAsync(message.Chat.Id, string.Format(DialogData.WELCOME_MESSAGE_TEMPLATE, message.From.Username, userId));
+        await MsgHasReceived(message, canToken);
+    }
+
+    private async Task MsgHasReceived(Message message, CancellationToken canToken)
+    {
+        await _bot.SendTextMessageAsync(message.Chat.Id, DialogData.YOUR_MESSAGE_HAS_BEEN_RECEIVED, cancellationToken: canToken);
     }
 
     private async Task HandleCommandMsgAsync(Message message, CancellationToken token)
@@ -257,17 +314,22 @@ internal class UserMessageHandler : IMessageHandler
                 case "/start":
                     if (_userList.ContainsKey(message.From.Id))
                     {
-                        await _bot.SendTextMessageAsync(message.Chat.Id, "Не кипишуй, бронируй авто. Вызывай в меню пункт /my_commands и да будет тебе счастье.", cancellationToken: token);
+                        await _bot.SendTextMessageAsync(message.Chat.Id, "Не кипишуй, бронируй авто. Вызывай в меню пункт /my_command и да будет тебе счастье.", cancellationToken: token);
                     }
                     else
                     {
-                        await _bot.SendTextMessageAsync(message.Chat.Id, "Хули тыкаешь?! Жди пока зарегают", cancellationToken: token);
+                        await SendMsgUnknowUser(message, message.Chat.Id, token);
+
+                        //await _bot.SendTextMessageAsync(message.Chat.Id, "Хули тыкаешь?! Жди пока зарегают", cancellationToken: token);
                     }
                     break;
 
                 case "/my_command":
+
                     await _bot.SendTextMessageAsync(message.Chat.Id, "Жми /book чтобы забронировать авто, сдать авто, или посмотреть какое авто у тебя не сдано.", cancellationToken: token);
                     await _bot.SendTextMessageAsync(message.Chat.Id, "Жми /report чтобы сдать отчетность.", cancellationToken: token);
+
+                    Console.WriteLine("Тут надо нарисовать кнопочки бронирования авто.");
 
                     break;
 
@@ -296,6 +358,6 @@ internal class UserMessageHandler : IMessageHandler
         #endregion
 
 
-        
+
     }
 }

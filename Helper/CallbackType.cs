@@ -1,6 +1,8 @@
-﻿namespace TruckBot.Helper
+﻿using Newtonsoft.Json;
+
+namespace TruckBot.Helper
 {
-    internal enum CallbackType
+    public enum CallbackType
     {
         UserRegister    = 0,
     }

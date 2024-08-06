@@ -36,7 +36,6 @@ internal class Program
                 cancellationToken: cts.Token
             );
 
-
             IMessageHandler userMessageHandler = new UserMessageHandler(bot, databaseService, adminList, userList);
             IMessageHandler adminMessageHandler = new AdminMessageHandler(bot, databaseService, adminList, userList);
 
@@ -44,12 +43,12 @@ internal class Program
             updateDispatcher.AddHandler(adminMessageHandler);
 
             await Console.Out.WriteLineAsync($"Начало работы бота {me.Username}");
-            await Console.In.ReadLineAsync();
 
         }
         await host.RunAsync();
     }
 
+    #region CreateHostBuilder
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
         return Host.CreateDefaultBuilder(args)
@@ -59,7 +58,7 @@ internal class Program
                 var appConfig = new AppConfig();
                 configuration.Bind(appConfig);
                 services.AddSingleton(appConfig);
-                
+
 
                 if (appConfig?.ConnectionStrings == null)
                 {
@@ -71,26 +70,26 @@ internal class Program
                 if (string.IsNullOrEmpty(connectionDefault))
                 {
                     throw new InvalidOperationException("ConnectionDefault is not set.");
-
                 }
-                Console.WriteLine(appConfig);
 
                 services.AddDbContext<ApplicationDbContext>(options =>
                     options.UseSqlite(connectionDefault));
 
-                services.AddTransient((provider) =>
+                services.AddSingleton((provider) =>
                 {
                     var appConfig = provider.GetRequiredService<AppConfig>();
                     var dbContext = provider.GetRequiredService<ApplicationDbContext>();
 
                     return new DatabaseService(appConfig, dbContext);
+
                 });
 
-                services.AddSingleton<TelegramBotClient>((provider) =>
+                services.AddSingleton((provider) =>
                 {
                     var appConfig = provider.GetRequiredService<AppConfig>();
                     return new TelegramBotClient(appConfig.BotKeyRelease);
                 });
             });
-    }
+    } 
+    #endregion
 }
