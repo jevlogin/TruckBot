@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.ConstrainedExecution;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
@@ -220,12 +221,38 @@ internal class UserMessageHandler : IMessageHandler
         switch (data)
         {
             case "accept_car":
+
                 if (_buttonMsgId.TryGetValue(data, out var msgId))
                 {
                     await _bot.DeleteMessageAsync(callbackQuery.Message?.Chat.Id, msgId);
                 }
                 await _bot.SendTextMessageAsync(callbackQuery.Message?.Chat.Id, "Введите номер авто в формате x999xx");
+
+
                 break;
+
+            case "car_selected_car_1":
+                Console.WriteLine("car_selected_car_1");
+                if (_buttonMsgId.TryGetValue(data, out var car_selected_car_1))
+                {
+                    await _bot.DeleteMessageAsync(callbackQuery.Message?.Chat.Id, car_selected_car_1);
+                }
+                break;
+            case "car_selected_car_2":
+                Console.WriteLine("car_selected_car_2");
+                if (_buttonMsgId.TryGetValue(data, out var car_selected_car_2))
+                {
+                    await _bot.DeleteMessageAsync(callbackQuery.Message?.Chat.Id, car_selected_car_2);
+                }
+                break;
+            case "car_selected_car_3":
+                Console.WriteLine("car_selected_car_3");
+                if (_buttonMsgId.TryGetValue(data, out var car_selected_car_3))
+                {
+                    await _bot.DeleteMessageAsync(callbackQuery.Message?.Chat.Id, car_selected_car_3);
+                }
+                break;
+
         }
     }
 
@@ -269,23 +296,68 @@ internal class UserMessageHandler : IMessageHandler
             }
             else
             {
-                var acceptButton = new InlineKeyboardButton("Принять авто")
+                //var cars = new List<string> { "car_1", "car_2", "car_3", "car_4", "car_5", "car_6", "car_7", "car_8", "car_9", "car_10" };
+                var cars = new List<string> { "A001AA 77", "B002BB 78", "C003CC 50", "E004EE 33", "K005KK 66", "M006MM 22", "H007HH 44", "P008PP 79", "T009TT 63", "X010XX 34" };
+
+                // Ваш остальной код...
+                // ...
+
+                // Ваш остальной код...
+                // ...
+                var rows = (int)Math.Ceiling((double)cars.Count / 3);
+                string prefics = $"car_selected_";
+
+                var keyBoardRows = new List<List<InlineKeyboardButton>>();
+                for (int i = 0; i < rows; i++)
                 {
-                    CallbackData = "accept_car"
-                };
-
-                var keyboardMarkup = new InlineKeyboardMarkup(acceptButton);
-
-                var msg = await _bot.SendTextMessageAsync(userId,
-                    string.Format(DialogData.WELCOME_MESSAGE_DEFAULT, currentDriver.FirstName, currentDriver.SecondName, currentDriver.LastName, listPhones.FirstOrDefault()),
-                    replyMarkup: keyboardMarkup,
-                   cancellationToken: canToken);
-
-                if (_buttonMsgId.ContainsKey("accept_car"))
-                {
-                    _buttonMsgId.Remove("accept_car");
+                    var row = cars.Skip(i * 3).Take(3).Select(car => new InlineKeyboardButton("Принять авто")
+                    {
+                        Text = car,
+                        CallbackData = $"{prefics}{car}"
+                    }).ToList();
+                    keyBoardRows.Add(row);
                 }
-                _buttonMsgId.Add("accept_car", msg.MessageId);
+                var backButton = new InlineKeyboardButton("Назад") { CallbackData = "back" };
+                var nextButton = new InlineKeyboardButton("Далее") { CallbackData = "next" };
+
+                keyBoardRows.Add(new List<InlineKeyboardButton> { backButton, nextButton });
+                var keyboard = new InlineKeyboardMarkup(keyBoardRows);
+
+                var webAppinfo = new WebAppInfo();
+                webAppinfo.Url = @"https://jevlogin.github.io/TruckBot/www/addUser.html";
+                var button = new KeyboardButton("👽 Принять авто");
+                button.WebApp = webAppinfo;
+                var replyKeyboard = new ReplyKeyboardMarkup(button) { ResizeKeyboard = true };
+                await _bot.SendTextMessageAsync(message.Chat.Id, "Чтобы выбрать авто, жмякай на кнопку", replyMarkup: replyKeyboard);
+
+                var webAppinfo2 = new WebAppInfo();
+                webAppinfo2.Url = @"https://ya.ru";
+                var button2 = new InlineKeyboardButton("Открыть форму");
+                button2.Url = webAppinfo2.Url;
+                var keyboard2 = new InlineKeyboardMarkup(button2);
+                var msg2 = await _bot.SendTextMessageAsync(message.Chat.Id, "Нажмите кнопку, чтобы открыть форму", replyMarkup: keyboard2);
+
+
+                //var webAppinfoAcceptAuto = new WebAppInfo();
+                //webAppinfoAcceptAuto.Url = @"https://jevlogin.github.io/TruckBot/www/addUser.html";
+                //var acceptAuto = new InlineKeyboardButton("Принять авто");
+                //acceptAuto.WebApp = webAppinfoAcceptAuto;
+                //acceptAuto.CallbackData = "acceptAuto";
+                //var keyboard = new InlineKeyboardMarkup(acceptAuto);
+
+
+                var msg = await _bot.SendTextMessageAsync(message.Chat.Id,
+                   string.Format(DialogData.WELCOME_MESSAGE_DEFAULT, currentDriver.FirstName, currentDriver.SecondName, currentDriver.LastName, listPhones.FirstOrDefault()),
+                   replyMarkup: keyboard);
+
+                _buttonMsgId.Clear();
+                cars.ForEach(car =>
+                {
+                    var tmpMsg = $"{prefics}{car}";
+                    Console.WriteLine(tmpMsg);
+                    _buttonMsgId.Add($"{prefics}{car}", msg.MessageId);
+                });
+
             }
         }
     }
@@ -351,13 +423,8 @@ internal class UserMessageHandler : IMessageHandler
                     await _bot.SendTextMessageAsync(message.Chat.Id, DialogData.CONTACTS_MSG_DEFAULT, cancellationToken: token);
 
                     break;
-
             }
         }
-
         #endregion
-
-
-
     }
 }

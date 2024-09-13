@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 internal class Program
 {
@@ -72,8 +73,15 @@ internal class Program
                     throw new InvalidOperationException("ConnectionDefault is not set.");
                 }
 
-                services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseSqlite(connectionDefault));
+                var serverVersion = new MySqlServerVersion(new Version(8, 0, 36));
+                services.AddDbContext<ApplicationDbContext>(
+                       dbContextOptions => dbContextOptions
+                           .UseMySql(connectionDefault, serverVersion)
+                           .LogTo(Console.WriteLine, LogLevel.Information)
+                           .EnableSensitiveDataLogging()
+                           .EnableDetailedErrors()
+                   );
+               
 
                 services.AddSingleton((provider) =>
                 {
@@ -81,7 +89,6 @@ internal class Program
                     var dbContext = provider.GetRequiredService<ApplicationDbContext>();
 
                     return new DatabaseService(appConfig, dbContext);
-
                 });
 
                 services.AddSingleton((provider) =>

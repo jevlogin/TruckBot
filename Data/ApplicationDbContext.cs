@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TruckBot.Model.Auto;
 using TruckBot.Model.User;
 
 
@@ -9,6 +10,7 @@ namespace TruckBot.Data
         #region Properties
         
         public DbSet<User> Users { get; set; } 
+        public DbSet<Auto> AutoList { get; set; } 
         
         #endregion
 
@@ -20,20 +22,5 @@ namespace TruckBot.Data
         }
 
         #endregion
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            if (!optionsBuilder.IsConfigured)
-            {
-                optionsBuilder.UseSqlite("Data Source=Data/local.db");
-            }
-        }
-
-
     }
 }
